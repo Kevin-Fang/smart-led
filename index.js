@@ -60,15 +60,82 @@ app.get("/set/:color/:value", (req, res) => {
 })
 
 app.get('/police', (req, res) => {
+	clearInterval(pattern)
+	let red = true
 	pattern = setInterval(() => {
-		if (leds.red.digitalRead() == 1) {
+		if (red) {
 			leds.red.pwmWrite(0)
 			leds.blue.pwmWrite(150)
+			red = false
 		} else {
 			leds.blue.pwmWrite(0)
 			leds.red.pwmWrite(150)
-		}}, 250)
+			red = true
+		}}, 75)
 })
+
+app.get('/fade1', (req, res) => {
+	clearInterval(pattern)
+	let led = leds.red
+	let dutyCycle = 0
+	decreasing = false
+
+	pattern = setInterval(() => {
+		led.pwmWrite(dutyCycle)
+		if (decreasing) {
+			dutyCycle -= 5
+		} else{
+			dutyCycle += 5
+		}
+
+		if (dutyCycle == 255) {
+			decreasing = true
+		} else if (dutyCycle == 0) {
+			decreasing = false
+			if (led == leds.red) {
+				led = leds.green
+			} else if (led == leds.green) {
+				led = leds.blue
+			} else if (led == leds.blue) {
+				led = leds.green
+			}
+		}
+	}, 30)
+	res.send("Turned on fade1")
+	
+})
+
+app.get('/fade2', (req, res) => {
+	clearInterval(pattern)
+	let inc_led = leds.red
+	let dec_led = null
+	let dutyCycle = 0
+
+	pattern = setInterval(() => {
+		dutyCycle = dutyCycle % 255
+		inc_led.pwmWrite(dutyCycle)
+		if (dec_led != null) {
+			dec_led.pwmWrite(255 - dutyCycle)
+		}
+		dutyCycle += 3
+
+		if (dutyCycle >= 255) {
+			if (inc_led == leds.red) {
+				inc_led = leds.green
+				dec_led = leds.red
+			} else if (inc_led == leds.green) {
+				inc_led = leds.blue
+				dec_led = leds.green
+			} else if (inc_led == leds.blue) {
+				inc_led = leds.red
+				dec_led = leds.blue
+			}
+		}
+	}, 30)
+	res.send("Turned on fade2")
+	
+})
+
 
 app.get("/off", (req, res) => {
 	leds.red.pwmWrite(0)
@@ -76,6 +143,15 @@ app.get("/off", (req, res) => {
 	leds.blue.pwmWrite(0)
 	clearInterval(pattern)
 	res.send("Turned all LEDs off")
+})
+
+app.get("/seizure", (req, res) => {
+	clearInterval(pattern)
+	pattern = setInterval(() => {
+		[leds.red, leds.green, leds.blue].map((led) => {
+			led.pwmWrite(Math.floor(Math.random() * 255))
+		}, 100)
+	})
 })
 
 app.listen(80)
