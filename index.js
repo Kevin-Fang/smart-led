@@ -8,6 +8,17 @@ let leds = {
 	blue: new gpio(22, {mode: gpio.OUTPUT})
 }
 
+let current = {
+	red: 0,
+	green: 0,
+	blue: 0
+}
+
+function writeColor(led, value) {
+	leds[led].pwmWrite(value)
+	current[led] = value
+}
+
 let pattern
 
 console.log("Finished setting up LEDs")
@@ -17,41 +28,41 @@ app.use(require('cors')())
 
 app.get("/toggle_red", (req, res) => {
 	if (leds.red.digitalRead() == 0) {
-		leds.red.pwmWrite(255)
+		writeColor('red', 255)
 		res.send("Turned on red LED")
 	} else {
-		leds.red.pwmWrite(0)
+		writeColor('red', 0)
 		res.send("Turned off red LED")
 	}
 })
 
 app.get("/toggle_green", (req, res) => {
 	if (leds.green.digitalRead() == 0) {
-		leds.green.pwmWrite(255)
+		writeColor('green', 255)
 		res.send("Turned on green LED")
 	} else {
-		leds.green.pwmWrite(0)
+		writeColor('green', 0)
 		res.send("Turned off green LED")
 	}
 })
 
 app.get("/toggle_blue", (req, res) => {
 	if (leds.blue.digitalRead() == 0) {
-		leds.blue.pwmWrite(255)
+		writeColor('blue', 255)
 		res.send("Turned on blue LED")
 	} else {
-		leds.blue.pwmWrite(0)
+		writeColor('blue', 0)
 		res.send("Turned off blue LED")
 	}
 })
 
 app.get("/set/:color/:value", (req, res) => {
 	if (req.params.color === "red") {
-		leds.red.pwmWrite(req.params.value)
+		writeColor('red', req.params.value)
 	} else if (req.params.color === "green") {
-		leds.green.pwmWrite(req.params.value)
+		writeColor('green', req.params.value)
 	} else if (req.params.color === "blue") {
-		leds.blue.pwmWrite(req.params.value)
+		writeColor('blue', req.params.value)
 	} else {
 		res.send(`No such color: ${req.params.color}`)
 		return
@@ -60,28 +71,29 @@ app.get("/set/:color/:value", (req, res) => {
 })
 
 app.get('/police', (req, res) => {
-	clearInterval(pattern)
+	allOff()
 	let red = true
 	pattern = setInterval(() => {
 		if (red) {
-			leds.red.pwmWrite(0)
-			leds.blue.pwmWrite(150)
+			writeColor('red', 0)
+			writeColor('blue', 150)
 			red = false
 		} else {
-			leds.blue.pwmWrite(0)
-			leds.red.pwmWrite(150)
+			writeColor('blue', 0)
+			writeColor('red', 150)
 			red = true
 		}}, 75)
+	res.send("Turned on police")
 })
 
 app.get('/fade1', (req, res) => {
-	clearInterval(pattern)
-	let led = leds.red
+	allOff()
+	let led = "red"
 	let dutyCycle = 0
 	decreasing = false
 
 	pattern = setInterval(() => {
-		led.pwmWrite(dutyCycle)
+		writeColor(led, dutyCycle)
 		if (decreasing) {
 			dutyCycle -= 5
 		} else{
@@ -93,11 +105,11 @@ app.get('/fade1', (req, res) => {
 		} else if (dutyCycle == 0) {
 			decreasing = false
 			if (led == leds.red) {
-				led = leds.green
+				led = "green"
 			} else if (led == leds.green) {
-				led = leds.blue
+				led = "blue"
 			} else if (led == leds.blue) {
-				led = leds.green
+				led = "red"
 			}
 		}
 	}, 30)
@@ -106,29 +118,29 @@ app.get('/fade1', (req, res) => {
 })
 
 app.get('/fade2', (req, res) => {
-	clearInterval(pattern)
-	let inc_led = leds.red
+	allOff()
+	let inc_led = "red"
 	let dec_led = null
 	let dutyCycle = 0
 
 	pattern = setInterval(() => {
 		dutyCycle = dutyCycle % 255
-		inc_led.pwmWrite(dutyCycle)
+		writeColor(inc_led, dutyCycle)
 		if (dec_led != null) {
-			dec_led.pwmWrite(255 - dutyCycle)
+			writeColor(dec_led, 255 - dutyCycle)
 		}
 		dutyCycle += 3
 
 		if (dutyCycle >= 255) {
 			if (inc_led == leds.red) {
-				inc_led = leds.green
-				dec_led = leds.red
+				inc_led = "green"
+				dec_led = "red"
 			} else if (inc_led == leds.green) {
-				inc_led = leds.blue
-				dec_led = leds.green
+				inc_led = "blue"
+				dec_led = "green"
 			} else if (inc_led == leds.blue) {
-				inc_led = leds.red
-				dec_led = leds.blue
+				inc_led = "red"
+				dec_led = "blue"
 			}
 		}
 	}, 30)
@@ -136,12 +148,16 @@ app.get('/fade2', (req, res) => {
 	
 })
 
-
-app.get("/off", (req, res) => {
+allOff = () => {
 	leds.red.pwmWrite(0)
 	leds.green.pwmWrite(0)
 	leds.blue.pwmWrite(0)
 	clearInterval(pattern)
+	
+}
+
+app.get("/off", (req, res) => {
+	allOff()
 	res.send("Turned all LEDs off")
 })
 
