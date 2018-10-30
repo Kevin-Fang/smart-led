@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@material-ui/core": "^3.3.2",
+    "@material-ui/lab": "^3.0.0-alpha.22",
     "axios": "^0.18.0",
     "react": "^16.6.0",
     "react-dom": "^16.6.0",
