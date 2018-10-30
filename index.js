@@ -42,5 +42,25 @@ app.get("/toggle_blue", (req, res) => {
 	}
 })
 
+app.get("/set/:color/:value", (req, res) => {
+	if (req.params.color === "red") {
+		leds.red.pwmWrite(req.params.value)
+	} else if (req.params.color === "green") {
+		leds.green.pwmWrite(req.params.value)
+	} else if (req.params.color === "blue") {
+		leds.blue.pwmWrite(req.params.value)
+	} else {
+		res.send(`No such color: ${req.params.color}`)
+	}
+	res.send(`Set ${req.params.color} to ${req.params.value}`)
+})
+
+app.get("/off", (req, res) => {
+	leds.red.pwmWrite(0)
+	leds.green.pwmWrite(0)
+	leds.blue.pwmWrite(0)
+	res.send("Turned all LEDs off")
+})
+
 app.listen(80)
 console.log("Server listening on port 80")
