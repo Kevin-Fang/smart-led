@@ -7,6 +7,9 @@ let leds = {
 	green: new gpio(17, {mode: gpio.OUTPUT}),
 	blue: new gpio(22, {mode: gpio.OUTPUT})
 }
+
+let pattern
+
 console.log("Finished setting up LEDs")
 
 
@@ -51,14 +54,27 @@ app.get("/set/:color/:value", (req, res) => {
 		leds.blue.pwmWrite(req.params.value)
 	} else {
 		res.send(`No such color: ${req.params.color}`)
+		return
 	}
 	res.send(`Set ${req.params.color} to ${req.params.value}`)
+})
+
+app.get('/police', (req, res) => {
+	pattern = setInterval(() => {
+		if (leds.red.digitalRead() == 1) {
+			leds.red.pwmWrite(0)
+			leds.blue.pwmWrite(150)
+		} else {
+			leds.blue.pwmWrite(0)
+			leds.red.pwmWrite(150)
+		}}, 250)
 })
 
 app.get("/off", (req, res) => {
 	leds.red.pwmWrite(0)
 	leds.green.pwmWrite(0)
 	leds.blue.pwmWrite(0)
+	clearInterval(pattern)
 	res.send("Turned all LEDs off")
 })
 
