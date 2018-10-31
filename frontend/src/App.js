@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import axios from 'axios'
 import Slider from '@material-ui/lab/Slider'
 
-let ip = "http://192.168.1.7/"
+let ip = "http://192.168.1.2/"
 class App extends Component {
   constructor(props) {
     super(props)
@@ -13,6 +13,10 @@ class App extends Component {
     }
   }
 
+  componentDidMount = async () => {
+    await this.updateValues()
+  }
+
   send_msg = async (msg) => {
     try {
       await axios.get(ip + msg)
@@ -21,25 +25,57 @@ class App extends Component {
     }
     return
   }
+
+  updateValues = async () => {
+    try {
+      let colors = await axios.get(ip + 'getValues')
+      //alert(JSON.stringify(colors))
+      //alert(JSON.stringify(colors.data))
+      this.setState({
+        redValue: colors.data.red,
+        greenValue: colors.data.green,
+        blueValue: colors.data.blue
+      })
+    } catch (e) {
+      alert("Failed to connect to server")
+    }
+  }
+
   toggleRed = async () => {
+    if (this.state.greenValue !== 0 || this.state.blueValue !== 0) {
+      await this.allOff()
+    }
     await this.send_msg('toggle_red')
+    await this.updateValues()
   }
   toggleGreen = async () => {
+    if (this.state.redValue !== 0 || this.state.blueValue !== 0) {
+      await this.allOff()
+    }
     await this.send_msg('toggle_green')
+    await this.updateValues()
   }
   toggleBlue = async () => {
+    if (this.state.redValue !== 0 || this.state.greenValue !== 0) {
+      await this.allOff()
+    }
     await this.send_msg('toggle_blue')
+    await this.updateValues()
   }
   allOff = async () => {
     await this.send_msg('off')
+    await this.updateValues()
   }
   police = async () => {
+    await this.updateValues()
     await this.send_msg('police')
   }
   fade1 = async () => {
+    await this.updateValues()
     await this.send_msg('fade1')
   }
   fade2 = async () => {
+    await this.updateValues()
     await this.send_msg('fade2')
   }
 
@@ -60,18 +96,21 @@ class App extends Component {
   }
 
   handleChangeRed = async (event, value) => {
+    //await this.allOff()
     value = Math.floor(value)
     this.setState({redValue: value}, async () => {
       await this.send_msg(`set/red/${this.state.redValue}`)
     })
   }
   handleChangeBlue = async (event, value) => {
+    //await this.allOff()
     value = Math.floor(value)
     this.setState({blueValue: value}, async () => {
       await this.send_msg(`set/blue/${this.state.blueValue}`)
     })
   }
   handleChangeGreen = async (event, value) => {
+    //await this.allOff()
     value = Math.floor(value)
     this.setState({greenValue: value}, async () => {
       await this.send_msg(`set/green/${this.state.greenValue}`)
@@ -80,7 +119,7 @@ class App extends Component {
 
   render() {
     return (
-      <div className="App">
+      <div className="App" style={{padding: 20}}>
         <button onClick={this.toggleRed}>Toggle Red</button><br/>
         <button onClick={this.toggleGreen}>Toggle Green</button><br/>
         <button onClick={this.toggleBlue}>Toggle Blue</button><br/>
@@ -89,6 +128,7 @@ class App extends Component {
         <button onClick={this.fade1}>Fade 1</button><br/>
         <button onClick={this.fade2}>Fade 2</button><br/>
         <button onClick={this.allOff}>All off</button><br/><br/>
+        Red
         <Slider
           value={this.state.redValue}
           onChange={this.handleChangeRed}
@@ -99,6 +139,7 @@ class App extends Component {
           style={{width: 300, padding: 20, handleFillColor: 'red'}}
           aria-labelledby="Red"
         /><br/><br/>
+        Green
         <Slider
           value={this.state.greenValue}
           onChange={this.handleChangeGreen}
@@ -107,6 +148,7 @@ class App extends Component {
           style={{width: 300, padding: 20}}
           aria-labelledby="Green"
         /><br/><br/>
+        Blue
         <Slider
           value={this.state.blueValue}
           max={255}
