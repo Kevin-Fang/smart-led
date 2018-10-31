@@ -104,17 +104,22 @@ app.get('/fade1', (req, res) => {
 			decreasing = true
 		} else if (dutyCycle == 0) {
 			decreasing = false
-			if (led == leds.red) {
+			if (led == "red") {
 				led = "green"
-			} else if (led == leds.green) {
+			} else if (led == "green") {
 				led = "blue"
-			} else if (led == leds.blue) {
+			} else if (led == "blue") {
 				led = "red"
 			}
 		}
 	}, 30)
 	res.send("Turned on fade1")
 	
+})
+
+app.get('/getValues', (req, res) => {
+	res.setHeader('Content-Type', 'text/json')
+	res.send(JSON.stringify(current))
 })
 
 app.get('/fade2', (req, res) => {
@@ -132,13 +137,13 @@ app.get('/fade2', (req, res) => {
 		dutyCycle += 3
 
 		if (dutyCycle >= 255) {
-			if (inc_led == leds.red) {
+			if (inc_led == "red") {
 				inc_led = "green"
 				dec_led = "red"
-			} else if (inc_led == leds.green) {
+			} else if (inc_led == "green") {
 				inc_led = "blue"
 				dec_led = "green"
-			} else if (inc_led == leds.blue) {
+			} else if (inc_led == "blue") {
 				inc_led = "red"
 				dec_led = "blue"
 			}
@@ -149,9 +154,9 @@ app.get('/fade2', (req, res) => {
 })
 
 allOff = () => {
-	leds.red.pwmWrite(0)
-	leds.green.pwmWrite(0)
-	leds.blue.pwmWrite(0)
+	writeColor('red', 0)
+	writeColor('green', 0)
+	writeColor('blue', 0)
 	clearInterval(pattern)
 	
 }
