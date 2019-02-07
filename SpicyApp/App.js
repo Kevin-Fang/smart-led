@@ -1,8 +1,11 @@
 import React from 'react';
-import { StyleSheet, Text, Button, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import SocketIOClient from 'socket.io-client'
 
-let ip = "http://localhost:8000"
+import { Slider, Button, ButtonGroup, Badge } from 'react-native-elements';
+
+
+let ip = "http://192.168.1.5:8000"
 
 export default class App extends React.Component {
   constructor(props) {
@@ -10,11 +13,14 @@ export default class App extends React.Component {
     this.socket = SocketIOClient(`${ip}`)
 
     this.socket.on('colors', (colors) => {
-      this.setState({
-        red: colors.red,
-        blue: colors.blue,
-        green: colors.green
-      })
+      if (!this.state.changing) {
+        this.setState({
+          red: colors.red,
+          blue: colors.blue,
+          green: colors.green,
+          changing: false
+        })
+      }
     })
 
     this.state = {
@@ -52,19 +58,100 @@ export default class App extends React.Component {
     }
   }
 
+  allOff = () => {
+    this.socket.emit('setcolor', {green: 0, red: 0, blue: 0})
+  }
+
+  updateByState = () => {
+    this.socket.emit('setcolor', this.state)
+  }
+
+  slidingStart = () => {
+    this.setState({
+      changing: true
+    })
+  }
+
+  slidingStop = () => {
+    this.setState({
+      changing: false
+    })
+  }
+
+  changeRed = (e) => {
+    this.setState({
+      red: Math.floor(e * 255)
+    }, () => {
+      this.updateByState()
+    })
+  }
+
+  changeGreen = (e) => {
+    this.setState({
+      green: Math.floor(e * 255)
+    }, () => {
+      this.updateByState()
+    })
+  }
+
+  changeBlue = (e) => {
+    this.setState({
+      blue: Math.floor(e * 255)
+    }, () => {
+      this.updateByState()
+    })
+  }
+
+  toggleIndex = (index) => {
+    if (index === 0) {
+      this.toggleRed()
+    } else if (index === 1) {
+      this.toggleGreen()
+    } else {
+      this.toggleBlue()
+    }
+  }
+
   render() {
     return (
       <View style={styles.container}>
-        <Button onPress={this.toggleRed}
-          title="Toggle Red" />
-        <Button onPress={this.toggleGreen}
-          title="Toggle Green" />
-        <Button onPress={this.toggleBlue}
-          title="Toggle Blue" />
-        <View>
-          <Text>Red: {this.state.red}</Text>
-          <Text>Green: {this.state.green}</Text>
-          <Text>Blue: {this.state.blue}</Text>
+        <ButtonGroup
+          onPress={this.toggleIndex}
+          buttons={['Toggle Red', 'Toggle Green', 'Toggle Blue']}
+          containerStyle={{height: 100}}
+        />
+        <Button style={{margin: 10}} 
+          type="clear"
+          titleStyle={{ color: 'red' }}
+          onPress={this.allOff}
+          title="All off" />
+        <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-around'}}>
+          <Badge value={this.state.red} status="error" />
+          <Badge value={this.state.green} status="success" />
+          <Badge value={this.state.blue} status="primary" />
+        </View>
+        <View style={{alignItems: 'stretch', margin: 20, justifyContent: 'center'}}>
+          <Slider 
+            animateTransitions={true} 
+            onSlidingStart={this.slidingStart}
+            onSlidingComplete={this.slidingStop}
+            onValueChange={this.changeRed} 
+            value={this.state.red / 255} 
+            thumbTintColor="red" />
+          <Slider 
+            animateTransitions={true} 
+            onValueChange={this.changeGreen} 
+            onSlidingStart={this.slidingStart}
+            onSlidingComplete={this.slidingStop}
+            value={this.state.green / 255} 
+            thumbTintColor="green" />
+          <Slider 
+            animateTransitions={true} 
+            onValueChange={this.changeBlue} 
+            onSlidingStart={this.slidingStart}
+            onSlidingComplete={this.slidingStop}
+            value={this.state.blue / 255} 
+            thumbTintColor="blue" />
         </View>
       </View>
     );
@@ -76,7 +163,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     flexDirection: 'column',
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'center',
   },
 });
