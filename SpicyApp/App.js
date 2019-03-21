@@ -2,10 +2,10 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import SocketIOClient from 'socket.io-client'
 
-import { Slider, Button, ButtonGroup, Badge } from 'react-native-elements';
+import { Slider, Button, ButtonGroup, Badge, Header } from 'react-native-elements';
 
 
-let ip = "http://192.168.1.5:8000"
+let ip = "http://192.168.1.2:8000"
 
 export default class App extends React.Component {
   constructor(props) {
@@ -18,7 +18,8 @@ export default class App extends React.Component {
           red: colors.red,
           blue: colors.blue,
           green: colors.green,
-          changing: false
+          changing: false,
+          currentAnimation: "",
         })
       }
     })
@@ -112,46 +113,79 @@ export default class App extends React.Component {
     }
   }
 
+  toggleAnimation = (msg) => {
+    if (this.state.currentAnimation == "") {
+      this.socket.emit(msg)
+      this.setState({currentAnimation: msg})
+    } else {
+      this.socket.emit("off")
+      if (this.state.currentAnimation == msg) {
+        this.setState({currentAnimation: ""})
+      } else {
+        this.setState({currentAnimation: ""}, () => {
+          this.toggleAnimation(msg)
+        })
+      }
+    }
+  }
+
+  createAnimationButton = (msg, buttonTitle) => {
+    return (
+        <Button style={{margin: 10}} 
+          buttonStyle={{backgroundColor: this.state.currentAnimation == msg ? "red" : "blue"}}
+          onPress={() => {this.toggleAnimation(msg)}}
+          title={buttonTitle}/>
+    )
+  }
+
   render() {
     return (
-      <View style={styles.container}>
-        <ButtonGroup
-          onPress={this.toggleIndex}
-          buttons={['Toggle Red', 'Toggle Green', 'Toggle Blue']}
-          containerStyle={{height: 100}}
+      <View style={styles.main}>
+        <Header
+          centerComponent={{ text: 'Spicy Room', style: { color: '#fff' } }}
         />
-        <Button style={{margin: 10}} 
-          type="clear"
-          titleStyle={{ color: 'red' }}
-          onPress={this.allOff}
-          title="All off" />
-        <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-around'}}>
-          <Badge value={this.state.red} status="error" />
-          <Badge value={this.state.green} status="success" />
-          <Badge value={this.state.blue} status="primary" />
-        </View>
-        <View style={{alignItems: 'stretch', margin: 20, justifyContent: 'center'}}>
-          <Slider 
-            animateTransitions={true} 
-            onSlidingStart={this.slidingStart}
-            onSlidingComplete={this.slidingStop}
-            onValueChange={this.changeRed} 
-            value={this.state.red / 255} 
-            thumbTintColor="red" />
-          <Slider 
-            animateTransitions={true} 
-            onValueChange={this.changeGreen} 
-            onSlidingStart={this.slidingStart}
-            onSlidingComplete={this.slidingStop}
-            value={this.state.green / 255} 
-            thumbTintColor="green" />
-          <Slider 
-            animateTransitions={true} 
-            onValueChange={this.changeBlue} 
-            onSlidingStart={this.slidingStart}
-            onSlidingComplete={this.slidingStop}
-            value={this.state.blue / 255} 
-            thumbTintColor="blue" />
+        <View style={styles.container}>
+          <ButtonGroup
+            onPress={this.toggleIndex}
+            buttons={['Toggle Red', 'Toggle Green', 'Toggle Blue']}
+            containerStyle={{height: 100}}
+          />
+          <Button style={{margin: 10}} 
+            type="clear"
+            titleStyle={{ color: 'red' }}
+            onPress={this.allOff}
+            title="All off" />
+          <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-around'}}>
+            <Badge value={this.state.red} status="error" />
+            <Badge value={this.state.green} status="success" />
+            <Badge value={this.state.blue} status="primary" />
+          </View>
+          <View style={{alignItems: 'stretch', margin: 20, justifyContent: 'center'}}>
+            <Slider 
+              animateTransitions={true} 
+              onSlidingStart={this.slidingStart}
+              onSlidingComplete={this.slidingStop}
+              onValueChange={this.changeRed} 
+              enabled={false}
+              value={this.state.red / 255} 
+              thumbTintColor="red" />
+            <Slider 
+              animateTransitions={true} 
+              onValueChange={this.changeGreen} 
+              onSlidingStart={this.slidingStart}
+              onSlidingComplete={this.slidingStop}
+              value={this.state.green / 255} 
+              thumbTintColor="green" />
+            <Slider 
+              animateTransitions={true} 
+              onValueChange={this.changeBlue} 
+              onSlidingStart={this.slidingStart}
+              onSlidingComplete={this.slidingStop}
+              value={this.state.blue / 255} 
+              thumbTintColor="blue" />
+          </View>
+          {this.createAnimationButton('police', "Police")}
+          {this.createAnimationButton('fade', "Fade")}
         </View>
       </View>
     );
@@ -166,6 +200,10 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     justifyContent: 'center',
   },
+  main: {
+    flex: 1,
+    flexDirection: 'column'
+  }
 });
 
 console.ignoredYellowBox = ['Remote debugger'];
